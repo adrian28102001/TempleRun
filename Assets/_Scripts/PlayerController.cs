@@ -42,29 +42,16 @@ namespace TempleRun.Player
             controller = GetComponent<CharacterController>();
             slidingAnimationId = Animator.StringToHash("Sliding");
 
-            if (playerInput != null && playerInput.actions != null)
-            {
-                turnAction = playerInput.actions["Turn"];
-                jumpAction = playerInput.actions["Jump"];
-                slideAction = playerInput.actions["Slide"];
-            }
+            turnAction = playerInput.actions["Turn"];
+            jumpAction = playerInput.actions["Jump"];
+            slideAction = playerInput.actions["Slide"];
         }
 
         private void OnEnable()
         {
-            if (turnAction != null)
-            {
-                turnAction.performed += PlayerTurn;
-            }
-            if (slideAction != null)
-            {
-                slideAction.performed += PlayerSlide;
-            }
-            
-            if (jumpAction != null)
-            {
-                jumpAction.performed += PlayerJump;
-            }
+            turnAction.performed += PlayerTurn;
+            slideAction.performed += PlayerSlide;
+            jumpAction.performed += PlayerJump;
         }
 
         private void OnDisable()
@@ -73,10 +60,12 @@ namespace TempleRun.Player
             {
                 turnAction.performed -= PlayerTurn;
             }
+
             if (slideAction != null)
             {
                 slideAction.performed -= PlayerSlide;
             }
+
             if (jumpAction != null)
             {
                 jumpAction.performed -= PlayerJump;
@@ -111,7 +100,7 @@ namespace TempleRun.Player
             newControllerCenter.y -= controller.height / 2;
             controller.center = newControllerCenter;
             animator.Play(slidingAnimationId);
-            
+
             yield return new WaitForSeconds(slideAnimationClip.length);
 
             controller.height *= 2;
