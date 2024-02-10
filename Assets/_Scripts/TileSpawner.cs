@@ -27,6 +27,56 @@ namespace TempleRun
         private List<GameObject> currentTiles;
         private List<GameObject> currentObstacles;
 
+        // Start is called before the first frame update
+        private void Start()
+        {
+            currentTiles = new List<GameObject>();
+            currentObstacles = new List<GameObject>();
+
+            Random.InitState(DateTime.Now.Millisecond);
+
+            for (int i = 0; i < tileStartCount; ++i)
+            {
+                SpawnTile(startingTile.GetComponent<Tile>());
+            }
+            
+            SpawnTile(SelectRandomGameObjectFromList(turnTiles).GetComponent<Tile>());
+        }
+        
+        private void SpawnTile(Tile tile, bool spawnObstacle = false)
+        {
+            Quaternion newTileRotation = tile.gameObject.transform.rotation *
+                                         Quaternion.LookRotation(currentTileDirection, Vector3.up);
+
+            prevTile = Instantiate(tile.gameObject, currentTileLocation, newTileRotation);
+            currentTiles.Add(prevTile);
+
+            if(spawnObstacle) SpawnObstacle();
+
+            if (tile.type == TileType.STRAIGHT)
+            {
+                currentTileLocation +=
+                    Vector3.Scale(prevTile.GetComponent<Renderer>().bounds.size, currentTileDirection);
+            }
+        }
+        
+        private void DeletePreviousTiles()
+        {
+            while (currentTiles.Count != 1)
+            {
+                GameObject tile = currentTiles[0];
+                currentTiles.RemoveAt(0);
+                Destroy(tile);
+            }
+            
+            while (currentObstacles.Count != 0)
+            {
+                GameObject obstacle = currentObstacles[0];
+                currentObstacles.RemoveAt(0);
+                Destroy(obstacle);
+            }
+        }
+        
         public void AddNewDirection(Vector3 direction)
         {
             currentTileDirection = direction;
@@ -55,54 +105,24 @@ namespace TempleRun
 
             for (int i = 0; i < currentPathLength; ++i)
             {
-                SpawnTile(startingTile.GetComponent<Tile>(), (i != 0));
+                SpawnTile(startingTile.GetComponent<Tile>(), spawnObstacle: i != 0);
             }
 
-            SpawnTile(SelectRandomGameObjectFromList(turnTiles).GetComponent<Tile>());
+            SpawnTile(SelectRandomGameObjectFromList(turnTiles).GetComponent<Tile>(), spawnObstacle: false);
         }
-
-        private void DeletePreviousTiles()
+        
+        private void SpawnObstacle()
         {
-            while (currentTiles.Count != 1)
-            {
-                GameObject tile = currentTiles[0];
-                currentTiles.RemoveAt(0);
-                Destroy(tile);
-            }
+            if (Random.value > 0.2f) return;
+
+            GameObject obstaclePrefab = SelectRandomGameObjectFromList(obstacles);
+            Quaternion newObjectRotation = obstaclePrefab.gameObject.transform.rotation *
+                                           Quaternion.LookRotation(currentTileDirection, Vector3.up);
+
+            GameObject obstacle = Instantiate(obstaclePrefab, currentTileLocation, newObjectRotation);
+            currentObstacles.Add(obstacle);
         }
-
-        // Start is called before the first frame update
-        private void Start()
-        {
-            currentTiles = new List<GameObject>();
-            currentObstacles = new List<GameObject>();
-
-            Random.InitState(DateTime.Now.Millisecond);
-
-            for (int i = 0; i < tileStartCount; ++i)
-            {
-                SpawnTile(startingTile.GetComponent<Tile>());
-            }
-
-            // SpawnTile(SelectRandomGameObjectFromList(turnTiles).GetComponent<Tile>());
-            SpawnTile(turnTiles[0].GetComponent<Tile>());
-            AddNewDirection(Vector3.left);
-        }
-
-        private void SpawnTile(Tile tile, bool spawnObstacle = false)
-        {
-            Quaternion newTileRotation = tile.gameObject.transform.rotation *
-                                         Quaternion.LookRotation(currentTileDirection, Vector3.up);
-
-            prevTile = Instantiate(tile.gameObject, currentTileLocation, newTileRotation);
-            currentTiles.Add(prevTile);
-
-            if (tile.type == TileType.STRAIGHT)
-            {
-                currentTileLocation += Vector3.Scale(prevTile.GetComponent<Renderer>().bounds.size, currentTileDirection); 
-            }
-        }
-
+        
         private GameObject SelectRandomGameObjectFromList(List<GameObject> list)
         {
             if (list.Count == 0) return null;
