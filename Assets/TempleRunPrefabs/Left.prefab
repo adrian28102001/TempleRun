@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 8265744635978223949}
   - component: {fileID: 8997136381197051915}
   - component: {fileID: 54947653135122987}
-  m_Layer: 8
+  m_Layer: 6
   m_Name: Left
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -350,7 +350,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8795145022663253240}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Pivot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -382,7 +382,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6003375000781336350}
   - component: {fileID: 1509282039614810148}
-  m_Layer: 6
+  m_Layer: 7
   m_Name: Turn Threshold
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -438,7 +438,7 @@ GameObject:
   - component: {fileID: 7337969336468353053}
   - component: {fileID: 7644972056565198141}
   - component: {fileID: 6343785842617692402}
-  m_Layer: 8
+  m_Layer: 6
   m_Name: Left
   m_TagString: Untagged
   m_Icon: {fileID: 0}

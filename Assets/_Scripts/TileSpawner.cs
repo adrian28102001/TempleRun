@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -80,7 +79,7 @@ namespace TempleRun
         public void AddNewDirection(Vector3 direction)
         {
             currentTileDirection = direction;
-            DeletePreviousTiles();
+            // DeletePreviousTiles();
 
             Vector3 tilePlacementScale;
             if (prevTile.GetComponent<Tile>().type == TileType.SIDEWAYS)
