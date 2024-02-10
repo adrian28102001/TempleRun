@@ -63,6 +63,12 @@ namespace TempleRun
 
         private void DeletePreviousTiles()
         {
+            while (currentTiles.Count != 1)
+            {
+                GameObject tile = currentTiles[0];
+                currentTiles.RemoveAt(0);
+                Destroy(tile);
+            }
         }
 
         // Start is called before the first frame update
@@ -88,15 +94,9 @@ namespace TempleRun
             Quaternion newTileRotation = tile.gameObject.transform.rotation *
                                          Quaternion.LookRotation(currentTileDirection, Vector3.up);
 
-            // Instantiate the new tile at the currentTileLocation instead of using currentTileDirection.
-            prevTile = GameObject.Instantiate(tile.gameObject, currentTileLocation, newTileRotation);
+            prevTile = Instantiate(tile.gameObject, currentTileLocation, newTileRotation);
             currentTiles.Add(prevTile);
 
-            // After adding the new tile, update the currentTileLocation for the next tile.
-            // This ensures the next tile is placed at the correct position.
-            // You might need to adjust this logic based on the orientation and desired direction of your tiles.
-            // Vector3 tileOffset = Vector3.Scale(prevTile.GetComponent<Renderer>().bounds.size, currentTileDirection);
- 
             if (tile.type == TileType.STRAIGHT)
             {
                 currentTileLocation += Vector3.Scale(prevTile.GetComponent<Renderer>().bounds.size, currentTileDirection); 
