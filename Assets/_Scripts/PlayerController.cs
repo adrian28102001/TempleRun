@@ -20,8 +20,8 @@ namespace TempleRun.Player
         [SerializeField] private Animator animator;
         [SerializeField] private AnimationClip slideAnimationClip;
 
-        [SerializeField]
-        private float playerSpeed;
+        [SerializeField] private float playerSpeed;
+        [SerializeField] private float scoreMultiplier = 10;
         private float gravity;
         private Vector3 movementDirection = Vector3.forward;
         private Vector3 playerVelocity;
@@ -35,8 +35,10 @@ namespace TempleRun.Player
 
         private int slidingAnimationId;
         private bool sliding;
-
+        private float score = 0;
         [SerializeField] private UnityEvent<Vector3> turnEvent;
+        [SerializeField] private UnityEvent<int> gameOverEvent;
+        [SerializeField] private UnityEvent<int> scoreUpdateEvent;
 
 
         private void Awake()
@@ -147,7 +149,7 @@ namespace TempleRun.Player
             {
                 Tile tile = hitColliders[0].transform.parent.GetComponent<Tile>();
                 TileType type = tile.type;
-                if ((type == TileType.LEFT && turnValue == -1) || 
+                if ((type == TileType.LEFT && turnValue == -1) ||
                     (type == TileType.RIGHT && turnValue == 1) ||
                     (type == TileType.SIDEWAYS))
                 {
@@ -171,7 +173,11 @@ namespace TempleRun.Player
                 GameOver();
                 return;
             }
-            
+
+            //Score functionality
+            score += scoreMultiplier * Time.deltaTime;
+            scoreUpdateEvent.Invoke((int)score);
+
             controller.Move(transform.forward * playerSpeed * Time.deltaTime);
 
             if (IsGrounded() && playerVelocity.y < 0)
@@ -216,6 +222,8 @@ namespace TempleRun.Player
         private void GameOver()
         {
             Debug.Log("Game over");
+            gameOverEvent.Invoke((int)score);
+            gameObject.SetActive(false);
         }
     }
 }
