@@ -106,7 +106,7 @@ namespace TempleRun.Player
             controller.center = newControllerCenter;
             animator.Play(slidingAnimationId);
 
-            yield return new WaitForSeconds(slideAnimationClip.length);
+            yield return new WaitForSeconds(slideAnimationClip.length / animator.speed);
 
             controller.height *= 2;
             controller.center = originalControllerCenter;
@@ -187,6 +187,17 @@ namespace TempleRun.Player
 
             playerVelocity.y += gravity * Time.deltaTime;
             controller.Move(playerVelocity * Time.deltaTime);
+
+            if (playerSpeed < maximumPlayerSpeed)
+            {
+                playerSpeed += Time.deltaTime * playerSpeedIncreaseRate;
+                gravity = initialGravityValue - playerSpeed;
+
+                if (animator.speed < 1.25f)
+                {
+                    animator.speed += (1 / playerSpeed) * Time.deltaTime;
+                }
+            }
         }
 
         private bool IsGrounded(float length = .2f)
