@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
@@ -9,15 +10,17 @@ namespace TempleRun.Player
     public class PlayerController : MonoBehaviour
     {
         [SerializeField] private float initialPlayerSpeed = 4f;
-        [SerializeField] private float maximumPlayerSpeer = 30f;
+        [SerializeField] private float maximumPlayerSpeed = 30f;
         [SerializeField] private float playerSpeedIncreaseRate = .1f;
         [SerializeField] private float jumpHeight = 1.0f;
         [SerializeField] private float initialGravityValue = -9.81f;
         [SerializeField] private LayerMask groundLayer;
         [SerializeField] private LayerMask turnLayer;
+        [SerializeField] private LayerMask obstacleLayer;
         [SerializeField] private Animator animator;
         [SerializeField] private AnimationClip slideAnimationClip;
 
+        [SerializeField]
         private float playerSpeed;
         private float gravity;
         private Vector3 movementDirection = Vector3.forward;
@@ -113,6 +116,7 @@ namespace TempleRun.Player
             Vector3? turnPosition = CheckTurn(context.ReadValue<float>());
             if (!turnPosition.HasValue)
             {
+                GameOver();
                 return;
             }
 
@@ -125,7 +129,7 @@ namespace TempleRun.Player
 
         private void Turn(float turnValue, Vector3 turnPosition)
         {
-            Vector3 tempPlayerPosition = new Vector3(turnPosition.x, turnPosition.y, turnPosition.y);
+            Vector3 tempPlayerPosition = new Vector3(turnPosition.x, transform.position.y, turnPosition.z);
             controller.enabled = false;
             transform.position = tempPlayerPosition;
             controller.enabled = true;
@@ -143,8 +147,9 @@ namespace TempleRun.Player
             {
                 Tile tile = hitColliders[0].transform.parent.GetComponent<Tile>();
                 TileType type = tile.type;
-                if ((type == TileType.LEFT && turnValue == -1) || (type == TileType.RIGHT && turnValue == 1) ||
-                    type == TileType.SIDEWAYS)
+                if ((type == TileType.LEFT && turnValue == -1) || 
+                    (type == TileType.RIGHT && turnValue == 1) ||
+                    (type == TileType.SIDEWAYS))
                 {
                     return tile.pivot.position;
                 }
@@ -161,6 +166,12 @@ namespace TempleRun.Player
 
         private void Update()
         {
+            if (!IsGrounded(20f))
+            {
+                GameOver();
+                return;
+            }
+            
             controller.Move(transform.forward * playerSpeed * Time.deltaTime);
 
             if (IsGrounded() && playerVelocity.y < 0)
@@ -176,7 +187,7 @@ namespace TempleRun.Player
         {
             Vector3 raycastOriginFirst = transform.position;
             raycastOriginFirst.y -= controller.height / 2f;
-            raycastOriginFirst.y += -.1f;
+            raycastOriginFirst.y += .1f;
 
             Vector3 raycastOriginSecond = raycastOriginFirst;
             raycastOriginFirst -= transform.forward * .2f;
@@ -186,10 +197,25 @@ namespace TempleRun.Player
             if (Physics.Raycast(raycastOriginFirst, Vector3.down, out RaycastHit hit, length, groundLayer) ||
                 Physics.Raycast(raycastOriginSecond, Vector3.down, out RaycastHit hit2, length, groundLayer))
             {
+                Debug.Log("Is grounded");
                 return true;
             }
 
+            Debug.Log("Is not grounded");
             return false;
+        }
+
+        private void OnControllerColliderHit(ControllerColliderHit hit)
+        {
+            if (((1 << hit.collider.gameObject.layer) & obstacleLayer) != 0)
+            {
+                GameOver();
+            }
+        }
+
+        private void GameOver()
+        {
+            Debug.Log("Game over");
         }
     }
 }
