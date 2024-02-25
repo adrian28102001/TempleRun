@@ -1,8 +1,8 @@
 using System;
 using System.Collections;
-using LootLocker.Requests;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
 
 public class GameOver : MonoBehaviour
@@ -11,110 +11,103 @@ public class GameOver : MonoBehaviour
     [SerializeField] private TMP_InputField inputField;
     [SerializeField] private TextMeshProUGUI leaderboardScoreText;
     [SerializeField] private TextMeshProUGUI leaderboardNameText;
-    
+
     private int score;
-    private const string leaderboardID = "20548";
-    private int leaderboardTopCount = 10;
+    private int leaderboardTopCount = 5;
+    private string submitScoreUrl = "http://localhost:5118/Leaderboard/";
+    private string getLeaderboardUrl = "http://localhost:5118/Leaderboard/";
 
     public void StopGame(int score)
     {
         this.score = score;
         scoreText.text = score.ToString();
-        GetLeaderboard();
+        StartCoroutine(GetLeaderboard());
     }
 
     public void SubmitScore()
     {
-        StartCoroutine(SubmitScoreToLeaderBoard());
+        StartCoroutine(SubmitScoreToLeaderBoard(inputField.text, score));
     }
 
-    private IEnumerator SubmitScoreToLeaderBoard()
+    private IEnumerator SubmitScoreToLeaderBoard(string playerName, int playerScore)
     {
-        bool? nameSet = null;
-        bool? scoreSubmitted = null;
-
-        LootLockerSDKManager.SetPlayerName(inputField.text, (response) =>
+        LeaderboardEntry entry = new LeaderboardEntry
         {
-            if (response.success)
+            name = playerName,
+            score = playerScore
+        };
+
+        string json = JsonUtility.ToJson(entry);
+
+        using (UnityWebRequest www = new UnityWebRequest(submitScoreUrl, "POST"))
+        {
+            byte[] jsonToSend = new System.Text.UTF8Encoding().GetBytes(json);
+            www.uploadHandler = (UploadHandler)new UploadHandlerRaw(jsonToSend);
+            www.downloadHandler = (DownloadHandler)new DownloadHandlerBuffer();
+            www.SetRequestHeader("Content-Type", "application/json");
+
+            yield return www.SendWebRequest();
+
+            if (www.result != UnityWebRequest.Result.Success)
             {
-                Debug.Log("Successfully set the player name.");
-                nameSet = true;
+                Debug.Log("Error submitting score: " + www.error);
             }
             else
             {
-                Debug.Log("Was not able to set the name");
-                nameSet = false;
+                Debug.Log("Score submitted successfully!");
+                StartCoroutine(GetLeaderboard());
             }
-        });
+        }
+    }
 
-        yield return new WaitUntil(() => nameSet.HasValue);
-
-        // if (!nameSet.HasValue) yield break;
-
-        LootLockerSDKManager.SubmitScore("", score, leaderboardID, (response) =>
+    private IEnumerator GetLeaderboard()
+    {
+        using (UnityWebRequest www = UnityWebRequest.Get(getLeaderboardUrl))
         {
-            if (response.success)
+            yield return www.SendWebRequest();
+
+            if (www.result != UnityWebRequest.Result.Success)
             {
-                Debug.Log("Successfully submitted the score to the leaderboard.");
-                scoreSubmitted = true;
+                Debug.Log("Error getting leaderboard: " + www.error);
             }
             else
             {
-                Debug.Log("Unsuccessfully submitted the score to the leaderboard.");
-                scoreSubmitted = false;
-            }
-        });
-
-        yield return new WaitUntil(() => scoreSubmitted.HasValue);
-        if (!scoreSubmitted.HasValue) yield break;
-
-        GetLeaderboard();
-    }
-
-    private void GetLeaderboard()
-    {
-        LootLockerSDKManager.GetScoreList(leaderboardID, leaderboardTopCount, (response) =>
-        {
-            if (response.success)
-            {
-                Debug.Log("Successfully got the score from leaderboard.");
-                string leaderboardName = "";
-                string leaderboardScore = "";
-
-                LootLockerLeaderboardMember[] members = response.items;
-                for (int i = 0; i < members.Length; ++i)
+                // Assuming that the JSON is wrapped as shown above
+                LeaderboardEntriesWrapper wrapper = JsonUtility.FromJson<LeaderboardEntriesWrapper>(www.downloadHandler.text);
+                if (wrapper != null && wrapper.entries != null)
                 {
-                    var player = members[i].player;
+                    leaderboardNameText.text = "";
+                    leaderboardScoreText.text = "";
 
-                    if (player == null)
+                    foreach (LeaderboardEntry entry in wrapper.entries)
                     {
-                        continue;
+                        leaderboardNameText.text += entry.name + Environment.NewLine;
+                        leaderboardScoreText.text += entry.score + Environment.NewLine;
                     }
 
-                    if (!string.IsNullOrWhiteSpace(members[i].player.name))
-                    {
-                        leaderboardName += player.name + Environment.NewLine;
-                    }
-                    else
-                    {
-                        leaderboardName += player.id + Environment.NewLine;
-                    }
-
-                    leaderboardScore += members[i].score + Environment.NewLine;
+                    Debug.Log("Leaderboard fetched successfully!");
                 }
-
-                leaderboardNameText.SetText(leaderboardName);
-                leaderboardScoreText.SetText(leaderboardScore);
+                else
+                {
+                    Debug.Log("Invalid JSON format for leaderboard.");
+                }
             }
-            else
-            {
-                Debug.Log("Unsuccessfully got the score from leaderboard.");
-            }
-        });
+        }
     }
 
-    public void AddXP(int score)
+    // Wrapper class for deserializing JSON array
+    [Serializable]
+    private class LeaderboardEntriesWrapper
     {
+        public LeaderboardEntry[] entries;
+    }
+
+    // Class representing a single leaderboard entry
+    [Serializable]
+    private class LeaderboardEntry
+    {
+        public string name;
+        public int score;
     }
 
     public void ReloadScene()
