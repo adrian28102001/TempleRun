@@ -7,11 +7,11 @@ namespace TempleRun
 {
     public class TileSpawner : MonoBehaviour
     {
-        [SerializeField] private int tileStartCount = 10;
+        [SerializeField] private int tileStartCount = 6;
 
         [SerializeField] private int minimumStraightTiles = 3;
 
-        [SerializeField] private int maximumStraightTiles = 15;
+        [SerializeField] private int maximumStraightTiles = 9;
 
         [SerializeField] private GameObject startingTile;
 
@@ -26,7 +26,6 @@ namespace TempleRun
         private List<GameObject> currentTiles;
         private List<GameObject> currentObstacles;
 
-        // Start is called before the first frame update
         private void Start()
         {
             currentTiles = new List<GameObject>();
