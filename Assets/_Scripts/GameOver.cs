@@ -91,7 +91,7 @@ public class GameOver : MonoBehaviour
                         continue;
                     }
 
-                    if (string.IsNullOrWhiteSpace(members[i].player.name))
+                    if (!string.IsNullOrWhiteSpace(members[i].player.name))
                     {
                         leaderboardName += player.name + Environment.NewLine;
                     }
