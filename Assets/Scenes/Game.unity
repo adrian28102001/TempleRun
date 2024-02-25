@@ -817,7 +817,7 @@ MonoBehaviour:
     m_Bits: 128
   obstacleLayer:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 256
   animator: {fileID: 752115943}
   slideAnimationClip: {fileID: 7400000, guid: f91354b469f0ae14c888074c655e34ae, type: 2}
   playerSpeed: 0.55
