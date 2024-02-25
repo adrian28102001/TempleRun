@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Cinemachine;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -19,13 +20,22 @@ namespace TempleRun
 
         [SerializeField] private List<GameObject> obstacles;
 
+        [SerializeField] private GameObject coinPrefab;
+
         private Vector3 currentTileLocation = Vector3.zero;
         private Vector3 currentTileDirection = Vector3.forward;
         private GameObject prevTile;
 
         private List<GameObject> currentTiles;
         private List<GameObject> currentObstacles;
+        private int tilesSinceLastCoin = 0;
+        private CinemachineVirtualCamera cinemachineVirtualCamera;
 
+        private void Awake()
+        {
+            cinemachineVirtualCamera = FindObjectOfType<CinemachineVirtualCamera>();
+        }
+        
         private void Start()
         {
             currentTiles = new List<GameObject>();
@@ -56,7 +66,37 @@ namespace TempleRun
                 currentTileLocation +=
                     Vector3.Scale(prevTile.GetComponent<Renderer>().bounds.size, currentTileDirection);
             }
+            
+            tilesSinceLastCoin++;
+
+            // Check if the required number of tiles has been spawned since the last coin
+            if (tilesSinceLastCoin >= 4) 
+            {
+                SpawnCoins(currentTileLocation + Vector3.up * 0.5f);
+                tilesSinceLastCoin = 0;
+            }       
         }
+        
+        private void SpawnCoins(Vector3 tilePosition)
+        {
+            // Only spawn one coin
+            Vector3 spawnPosition = new Vector3(
+                tilePosition.x, // Center the coin on the tile
+                tilePosition.y + 3f, // Adjust the height as needed
+                tilePosition.z
+            );
+
+            GameObject coin = Instantiate(coinPrefab, spawnPosition, Quaternion.identity, transform);
+
+            Transform cinemachineCameraTransform = cinemachineVirtualCamera.transform;
+
+            Quaternion coinRotation = Quaternion.LookRotation(-cinemachineCameraTransform.forward, Vector3.up);
+
+            coin.transform.rotation = coinRotation;
+
+            coin.transform.Rotate(90, 0, 0);
+        }
+
         
         private void DeletePreviousTiles()
         {
@@ -78,7 +118,7 @@ namespace TempleRun
         public void AddNewDirection(Vector3 direction)
         {
             currentTileDirection = direction;
-            // DeletePreviousTiles();
+            DeletePreviousTiles();
 
             Vector3 tilePlacementScale;
             if (prevTile.GetComponent<Tile>().type == TileType.SIDEWAYS)
