@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Cinemachine;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -29,13 +28,11 @@ namespace TempleRun
         private List<GameObject> currentTiles;
         private List<GameObject> currentObstacles;
         private int tilesSinceLastCoin = 0;
-        private CinemachineVirtualCamera cinemachineVirtualCamera;
 
-        private void Awake()
-        {
-            cinemachineVirtualCamera = FindObjectOfType<CinemachineVirtualCamera>();
-        }
-        
+        private int minTilesBetweenObstacles = 1;
+        private GameObject lastObstacle = null;
+        private int tilesSinceLastObstacle = 0;
+
         private void Start()
         {
             currentTiles = new List<GameObject>();
@@ -47,10 +44,10 @@ namespace TempleRun
             {
                 SpawnTile(startingTile.GetComponent<Tile>());
             }
-            
+
             SpawnTile(SelectRandomGameObjectFromList(turnTiles).GetComponent<Tile>());
         }
-        
+
         private void SpawnTile(Tile tile, bool spawnObstacle = false)
         {
             Quaternion newTileRotation = tile.gameObject.transform.rotation *
@@ -58,6 +55,7 @@ namespace TempleRun
 
             prevTile = Instantiate(tile.gameObject, currentTileLocation, newTileRotation);
             currentTiles.Add(prevTile);
+            tilesSinceLastObstacle++;
 
             if (spawnObstacle)
             {
@@ -67,12 +65,11 @@ namespace TempleRun
             {
                 tilesSinceLastCoin++;
 
-                // Check if the required number of tiles has been spawned since the last coin
-                if (tilesSinceLastCoin >= 4) 
+                if (tilesSinceLastCoin >= 4)
                 {
                     SpawnCoins(currentTileLocation + Vector3.up * 0.5f);
                     tilesSinceLastCoin = 0;
-                }    
+                }
             }
 
             if (tile.type == TileType.STRAIGHT)
@@ -81,7 +78,7 @@ namespace TempleRun
                     Vector3.Scale(prevTile.GetComponent<Renderer>().bounds.size, currentTileDirection);
             }
         }
-        
+
         private void SpawnCoins(Vector3 tilePosition)
         {
             Vector3 spawnPosition = new Vector3(
@@ -98,7 +95,7 @@ namespace TempleRun
             // Adjust if necessary to make sure the coin is facing up
             coin.transform.Rotate(90, 0, 0);
         }
-        
+
         private void DeletePreviousTiles()
         {
             while (currentTiles.Count != 1)
@@ -107,7 +104,7 @@ namespace TempleRun
                 currentTiles.RemoveAt(0);
                 Destroy(tile);
             }
-            
+
             while (currentObstacles.Count != 0)
             {
                 GameObject obstacle = currentObstacles[0];
@@ -115,7 +112,7 @@ namespace TempleRun
                 Destroy(obstacle);
             }
         }
-        
+
         public void AddNewDirection(Vector3 direction)
         {
             currentTileDirection = direction;
@@ -149,19 +146,29 @@ namespace TempleRun
 
             SpawnTile(SelectRandomGameObjectFromList(turnTiles).GetComponent<Tile>(), spawnObstacle: false);
         }
-        
+
         private void SpawnObstacle()
         {
+            // Ensure minimum spacing since the last obstacle
+            if (tilesSinceLastObstacle < minTilesBetweenObstacles)
+            {
+                return;
+            }
+
+            // Spawn obstacle with some probability
             if (Random.value > 0.4f) return;
 
             GameObject obstaclePrefab = SelectRandomGameObjectFromList(obstacles);
             Quaternion newObjectRotation = obstaclePrefab.gameObject.transform.rotation *
                                            Quaternion.LookRotation(currentTileDirection, Vector3.up);
 
+            // Spawn the obstacle
             GameObject obstacle = Instantiate(obstaclePrefab, currentTileLocation, newObjectRotation);
             currentObstacles.Add(obstacle);
+
+            tilesSinceLastObstacle = 0;
         }
-        
+
         private GameObject SelectRandomGameObjectFromList(List<GameObject> list)
         {
             if (list.Count == 0) return null;
