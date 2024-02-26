@@ -9,8 +9,8 @@ namespace TempleRun.Player
     [RequireComponent(typeof(CharacterController), typeof(PlayerInput))]
     public class PlayerController : MonoBehaviour
     {
-        [SerializeField] private float initialPlayerSpeed = 20f;
-        [SerializeField] private float maximumPlayerSpeed = 35f;
+        [SerializeField] private float initialPlayerSpeed = 15f;
+        [SerializeField] private float maximumPlayerSpeed = 25f;
         [SerializeField] private float playerSpeedIncreaseRate = .1f;
         [SerializeField] private float jumpHeight = 1.0f;
         [SerializeField] private float initialGravityValue = -9.81f;
@@ -42,6 +42,8 @@ namespace TempleRun.Player
         [SerializeField] private UnityEvent<int> gameOverEvent;
         [SerializeField] private UnityEvent<int> scoreUpdateEvent;
         [SerializeField] private UnityEvent<int> coinCollectEvent;
+
+        private bool isJumping = false;
 
         private void Awake()
         {
@@ -97,10 +99,11 @@ namespace TempleRun.Player
 
         private void PlayerJump(InputAction.CallbackContext context)
         {
-            if (IsGrounded())
+            if (IsGrounded() && !isJumping)
             {
                 playerVelocity.y += Mathf.Sqrt(jumpHeight * gravity * -3f);
                 controller.Move(playerVelocity * Time.deltaTime);
+                isJumping = true;
             }
         }
 
@@ -186,7 +189,7 @@ namespace TempleRun.Player
 
         private void Update()
         {
-            if (!IsGrounded(20f))
+            if (!IsGrounded(20f) && !isJumping)
             {
                 GameOver();
                 return;
@@ -202,6 +205,7 @@ namespace TempleRun.Player
             if (IsGrounded() && playerVelocity.y < 0)
             {
                 playerVelocity.y = 0f;
+                isJumping = false; 
             }
 
             playerVelocity.y += gravity * Time.deltaTime;

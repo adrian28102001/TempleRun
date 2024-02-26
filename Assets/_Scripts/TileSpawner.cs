@@ -20,7 +20,10 @@ namespace TempleRun
         [SerializeField] private List<GameObject> obstacles;
 
         [SerializeField] private GameObject coinPrefab;
-
+        
+        private float gapProbability = 0.3f; // 20% chance to spawn a gap
+        private float gapSize = 3f; // The size of the gap
+        
         private Vector3 currentTileLocation = Vector3.zero;
         private Vector3 currentTileDirection = Vector3.forward;
         private GameObject prevTile;
@@ -28,11 +31,14 @@ namespace TempleRun
         private List<GameObject> currentTiles;
         private List<GameObject> currentObstacles;
         private int tilesSinceLastCoin = 0;
+        private int totalTilesSpawned = 0;
 
         private int minTilesBetweenObstacles = 1;
         private GameObject lastObstacle = null;
         private int tilesSinceLastObstacle = 0;
-
+        private bool lastTileWasGap = false;
+        private bool lastTileWasObstacle = false;
+        
         private void Start()
         {
             currentTiles = new List<GameObject>();
@@ -56,6 +62,7 @@ namespace TempleRun
             prevTile = Instantiate(tile.gameObject, currentTileLocation, newTileRotation);
             currentTiles.Add(prevTile);
             tilesSinceLastObstacle++;
+            totalTilesSpawned++;
 
             if (spawnObstacle)
             {
@@ -74,8 +81,21 @@ namespace TempleRun
 
             if (tile.type == TileType.STRAIGHT)
             {
-                currentTileLocation +=
-                    Vector3.Scale(prevTile.GetComponent<Renderer>().bounds.size, currentTileDirection);
+                Vector3 tileScale = Vector3.Scale(prevTile.GetComponent<Renderer>().bounds.size, currentTileDirection);
+                currentTileLocation += tileScale;
+
+                // Check if we should spawn a gap, but not if the last tile was an obstacle
+                if (totalTilesSpawned > tileStartCount && Random.value < gapProbability && !lastTileWasObstacle)
+                {
+                    // Add a gap by moving the spawn location forward
+                    currentTileLocation += currentTileDirection * gapSize;
+                    lastTileWasGap = true;
+                    lastTileWasObstacle = false; // Reset obstacle flag as we just spawned a gap
+                }
+                else
+                {
+                    lastTileWasGap = false; // Reset gap flag as we spawned a regular tile
+                }
             }
         }
 
@@ -145,12 +165,16 @@ namespace TempleRun
             }
 
             SpawnTile(SelectRandomGameObjectFromList(turnTiles).GetComponent<Tile>(), spawnObstacle: false);
+            
+            // Reset flags when adding a new direction
+            lastTileWasGap = false;
+            lastTileWasObstacle = false;
         }
 
         private void SpawnObstacle()
         {
-            // Ensure minimum spacing since the last obstacle
-            if (tilesSinceLastObstacle < minTilesBetweenObstacles)
+            // Ensure minimum spacing since the last obstacle and check gap flag
+            if (tilesSinceLastObstacle < minTilesBetweenObstacles || lastTileWasGap)
             {
                 return;
             }
@@ -167,6 +191,8 @@ namespace TempleRun
             currentObstacles.Add(obstacle);
 
             tilesSinceLastObstacle = 0;
+            lastTileWasObstacle = true;
+            lastTileWasGap = false;
         }
 
         private GameObject SelectRandomGameObjectFromList(List<GameObject> list)
