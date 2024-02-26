@@ -19,7 +19,6 @@ namespace TempleRun.Player
         [SerializeField] private LayerMask obstacleLayer;
         [SerializeField] private Animator animator;
         [SerializeField] private AnimationClip slideAnimationClip;
-        [SerializeField] private UnityEvent<int> coinCollectEvent;
 
         [SerializeField] private float playerSpeed;
         [SerializeField] private float scoreMultiplier = 10;
@@ -42,7 +41,7 @@ namespace TempleRun.Player
         [SerializeField] private UnityEvent<Vector3> turnEvent;
         [SerializeField] private UnityEvent<int> gameOverEvent;
         [SerializeField] private UnityEvent<int> scoreUpdateEvent;
-
+        [SerializeField] private UnityEvent<int> coinCollectEvent;
 
         private void Awake()
         {
@@ -82,7 +81,7 @@ namespace TempleRun.Player
 
         private void OnTriggerEnter(Collider other)
         {
-            if (other.CompareTag("Coin")) // Ensure your coin prefab has the "Coin" tag
+            if (other.name.Contains("PirateCoin"))
             {
                 CollectCoin();
                 Destroy(other.gameObject);
@@ -93,8 +92,8 @@ namespace TempleRun.Player
         {
             coins++;
             coinCollectEvent.Invoke(coins);
-            // Here you can also call a method to update your UI with the new coin count
         }
+
 
         private void PlayerJump(InputAction.CallbackContext context)
         {
@@ -196,6 +195,7 @@ namespace TempleRun.Player
             //Score functionality
             score += scoreMultiplier * Time.deltaTime;
             scoreUpdateEvent.Invoke((int)score);
+            coinCollectEvent.Invoke((int)coins);
 
             controller.Move(transform.forward * playerSpeed * Time.deltaTime);
 

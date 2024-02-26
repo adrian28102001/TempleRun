@@ -59,27 +59,31 @@ namespace TempleRun
             prevTile = Instantiate(tile.gameObject, currentTileLocation, newTileRotation);
             currentTiles.Add(prevTile);
 
-            if(spawnObstacle) SpawnObstacle();
+            if (spawnObstacle)
+            {
+                SpawnObstacle();
+            }
+            else
+            {
+                tilesSinceLastCoin++;
+
+                // Check if the required number of tiles has been spawned since the last coin
+                if (tilesSinceLastCoin >= 4) 
+                {
+                    SpawnCoins(currentTileLocation + Vector3.up * 0.5f);
+                    tilesSinceLastCoin = 0;
+                }    
+            }
 
             if (tile.type == TileType.STRAIGHT)
             {
                 currentTileLocation +=
                     Vector3.Scale(prevTile.GetComponent<Renderer>().bounds.size, currentTileDirection);
             }
-            
-            tilesSinceLastCoin++;
-
-            // Check if the required number of tiles has been spawned since the last coin
-            if (tilesSinceLastCoin >= 4) 
-            {
-                SpawnCoins(currentTileLocation + Vector3.up * 0.5f);
-                tilesSinceLastCoin = 0;
-            }       
         }
         
         private void SpawnCoins(Vector3 tilePosition)
         {
-            // Only spawn one coin
             Vector3 spawnPosition = new Vector3(
                 tilePosition.x, // Center the coin on the tile
                 tilePosition.y + 3f, // Adjust the height as needed
@@ -88,15 +92,12 @@ namespace TempleRun
 
             GameObject coin = Instantiate(coinPrefab, spawnPosition, Quaternion.identity, transform);
 
-            Transform cinemachineCameraTransform = cinemachineVirtualCamera.transform;
-
-            Quaternion coinRotation = Quaternion.LookRotation(-cinemachineCameraTransform.forward, Vector3.up);
-
+            Quaternion coinRotation = Quaternion.LookRotation(currentTileDirection, Vector3.up);
             coin.transform.rotation = coinRotation;
 
+            // Adjust if necessary to make sure the coin is facing up
             coin.transform.Rotate(90, 0, 0);
         }
-
         
         private void DeletePreviousTiles()
         {
