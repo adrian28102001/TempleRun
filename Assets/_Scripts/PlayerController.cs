@@ -9,7 +9,7 @@ namespace TempleRun.Player
     [RequireComponent(typeof(CharacterController), typeof(PlayerInput))]
     public class PlayerController : MonoBehaviour
     {
-        [SerializeField] private float initialPlayerSpeed = 15f;
+        [SerializeField] private float initialPlayerSpeed = 11f;
         [SerializeField] private float maximumPlayerSpeed = 25f;
         [SerializeField] private float playerSpeedIncreaseRate = .1f;
         [SerializeField] private float jumpHeight = 1.0f;
