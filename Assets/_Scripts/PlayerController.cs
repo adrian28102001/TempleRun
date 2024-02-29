@@ -1,5 +1,6 @@
-using System;
 using System.Collections;
+using _Scripts;
+using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.InputSystem;
@@ -19,7 +20,6 @@ namespace TempleRun.Player
         [SerializeField] private LayerMask obstacleLayer;
         [SerializeField] private Animator animator;
         [SerializeField] private AnimationClip slideAnimationClip;
-
         [SerializeField] private float playerSpeed;
         [SerializeField] private float scoreMultiplier = 10;
         private float gravity;
@@ -35,15 +35,26 @@ namespace TempleRun.Player
 
         private int slidingAnimationId;
         private bool sliding;
-        private float score = 0;
-        private int coins = 0;
-        
+        private float score;
+        private int coins;
+
         [SerializeField] private UnityEvent<Vector3> turnEvent;
         [SerializeField] private UnityEvent<int> gameOverEvent;
         [SerializeField] private UnityEvent<int> scoreUpdateEvent;
         [SerializeField] private UnityEvent<int> coinCollectEvent;
 
-        private bool isJumping = false;
+        [SerializeField] private TextMeshProUGUI countdownText;
+
+        private bool isJumping;
+        private bool superPowerActive;
+        private const float superPowerDuration = 4f;
+        private float superPowerTimer;
+
+        private bool isPoisoned;
+        private const float poisonDuration = 5f;
+        private float poisonTimer;
+        
+        public EnvironmentController environmentController;
 
         private void Awake()
         {
@@ -88,8 +99,36 @@ namespace TempleRun.Player
                 CollectCoin();
                 Destroy(other.gameObject);
             }
+
+            if (other.gameObject.CompareTag("SuperPower"))
+            {
+                ActivateSuperPower();
+                Destroy(other.gameObject);
+            }
+            
+            if (other.gameObject.CompareTag("Poison"))
+            {
+                ActivatePoisonEffect();
+                environmentController.ActivatePoisonEffect();
+                Destroy(other.gameObject);
+            }
+        }
+
+        private void ActivatePoisonEffect()
+        {
+            isPoisoned = true;
+            poisonTimer = poisonDuration;
+            // Activate fog or UI overlay to impair vision
         }
         
+        private void ActivateSuperPower()
+        {
+            superPowerActive = true;
+            superPowerTimer = superPowerDuration;
+            playerSpeed /= 2;
+        }
+
+
         private void CollectCoin()
         {
             coins++;
@@ -205,7 +244,7 @@ namespace TempleRun.Player
             if (IsGrounded() && playerVelocity.y < 0)
             {
                 playerVelocity.y = 0f;
-                isJumping = false; 
+                isJumping = false;
             }
 
             playerVelocity.y += gravity * Time.deltaTime;
@@ -219,6 +258,28 @@ namespace TempleRun.Player
                 if (animator.speed < 1.25f)
                 {
                     animator.speed += (1 / playerSpeed) * Time.deltaTime;
+                }
+            }
+
+            if (superPowerActive)
+            {
+                superPowerTimer -= Time.deltaTime;
+                countdownText.text = "Speed Boost: " + superPowerTimer.ToString("F1") + "s";
+
+                if (superPowerTimer <= 0)
+                {
+                    DeactivateSuperPower();
+                }
+            }
+            
+            if (isPoisoned)
+            {
+                poisonTimer -= Time.deltaTime;
+                // Update fog or UI overlay if necessary
+
+                if (poisonTimer <= 0)
+                {
+                    DeactivatePoisonEffect();
                 }
             }
         }
@@ -258,6 +319,19 @@ namespace TempleRun.Player
             Debug.Log("Game over");
             gameOverEvent.Invoke((int)score);
             gameObject.SetActive(false);
+        }
+
+        private void DeactivateSuperPower()
+        {
+            superPowerActive = false;
+            playerSpeed *= 2;
+            countdownText.text = "";
+        }
+        
+        private void DeactivatePoisonEffect()
+        {
+            isPoisoned = false;
+            environmentController.DeactivatePoisonEffect();
         }
     }
 }

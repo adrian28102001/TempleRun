@@ -20,25 +20,32 @@ namespace TempleRun
         [SerializeField] private List<GameObject> obstacles;
 
         [SerializeField] private GameObject coinPrefab;
+        [SerializeField] private GameObject superPowerPrefab;
+        [SerializeField] private GameObject poisonPrefab;
         
-        private float gapProbability = 0.3f; // 20% chance to spawn a gap
-        private float gapSize = 3f; // The size of the gap
+        private const int minTilesBetweenPoison = 15;
+        private int tilesSinceLastPoison;
         
+        private float gapProbability = 0.3f;
+        private float gapSize = 3f;
+
         private Vector3 currentTileLocation = Vector3.zero;
         private Vector3 currentTileDirection = Vector3.forward;
         private GameObject prevTile;
 
         private List<GameObject> currentTiles;
         private List<GameObject> currentObstacles;
-        private int tilesSinceLastCoin = 0;
-        private int totalTilesSpawned = 0;
+        private int tilesSinceLastCoin;
+        private int totalTilesSpawned;
 
         private int minTilesBetweenObstacles = 1;
         private GameObject lastObstacle = null;
-        private int tilesSinceLastObstacle = 0;
-        private bool lastTileWasGap = false;
-        private bool lastTileWasObstacle = false;
-        
+        private int tilesSinceLastObstacle;
+        private bool lastTileWasGap;
+        private bool lastTileWasObstacle;
+        private int tilesSinceLastSuperPower;
+        private const int minTilesBetweenSuperPowers = 12;
+
         private void Start()
         {
             currentTiles = new List<GameObject>();
@@ -70,8 +77,17 @@ namespace TempleRun
             }
             else
             {
-                tilesSinceLastCoin++;
+                tilesSinceLastSuperPower++;
+                if (tilesSinceLastSuperPower >= minTilesBetweenSuperPowers && Random.value < 0.65)
+                {
+                    if (!lastTileWasObstacle && !lastTileWasGap)
+                    {
+                        SpawnSuperPower(currentTileLocation + Vector3.up * 2f);
+                        tilesSinceLastSuperPower = 0;
+                    }
+                }
 
+                tilesSinceLastCoin++;
                 if (tilesSinceLastCoin >= 4)
                 {
                     SpawnCoins(currentTileLocation + Vector3.up * 0.5f);
@@ -84,26 +100,44 @@ namespace TempleRun
                 Vector3 tileScale = Vector3.Scale(prevTile.GetComponent<Renderer>().bounds.size, currentTileDirection);
                 currentTileLocation += tileScale;
 
-                // Check if we should spawn a gap, but not if the last tile was an obstacle
                 if (totalTilesSpawned > tileStartCount && Random.value < gapProbability && !lastTileWasObstacle)
                 {
-                    // Add a gap by moving the spawn location forward
                     currentTileLocation += currentTileDirection * gapSize;
                     lastTileWasGap = true;
-                    lastTileWasObstacle = false; // Reset obstacle flag as we just spawned a gap
+                    lastTileWasObstacle = false;
                 }
                 else
                 {
-                    lastTileWasGap = false; // Reset gap flag as we spawned a regular tile
+                    lastTileWasGap = false;
                 }
+            }
+            
+            if (tilesSinceLastSuperPower >= minTilesBetweenSuperPowers && Random.value < 0.65)
+            {
+                SpawnSuperPower(currentTileLocation + Vector3.up * 2f);
+                tilesSinceLastSuperPower = 0;
+            }
+            else
+            {
+                tilesSinceLastSuperPower++;
+            }
+            
+            if (tilesSinceLastPoison >= minTilesBetweenPoison && Random.value < 0.3)
+            {
+                SpawnPoison(currentTileLocation + Vector3.up * 2f);
+                tilesSinceLastPoison = 0;
+            }
+            else
+            {
+                tilesSinceLastPoison++;
             }
         }
 
         private void SpawnCoins(Vector3 tilePosition)
         {
             Vector3 spawnPosition = new Vector3(
-                tilePosition.x, // Center the coin on the tile
-                tilePosition.y + 3f, // Adjust the height as needed
+                tilePosition.x,
+                tilePosition.y + 3f,
                 tilePosition.z
             );
 
@@ -112,7 +146,6 @@ namespace TempleRun
             Quaternion coinRotation = Quaternion.LookRotation(currentTileDirection, Vector3.up);
             coin.transform.rotation = coinRotation;
 
-            // Adjust if necessary to make sure the coin is facing up
             coin.transform.Rotate(90, 0, 0);
         }
 
@@ -165,21 +198,18 @@ namespace TempleRun
             }
 
             SpawnTile(SelectRandomGameObjectFromList(turnTiles).GetComponent<Tile>(), spawnObstacle: false);
-            
-            // Reset flags when adding a new direction
+
             lastTileWasGap = false;
             lastTileWasObstacle = false;
         }
 
         private void SpawnObstacle()
         {
-            // Ensure minimum spacing since the last obstacle and check gap flag
             if (tilesSinceLastObstacle < minTilesBetweenObstacles || lastTileWasGap)
             {
                 return;
             }
 
-            // Spawn obstacle with some probability
             if (Random.value > 0.4f) return;
 
             GameObject obstaclePrefab = SelectRandomGameObjectFromList(obstacles);
@@ -200,6 +230,16 @@ namespace TempleRun
             if (list.Count == 0) return null;
 
             return list[Random.Range(0, list.Count)];
+        }
+        
+        private void SpawnSuperPower(Vector3 position)
+        {
+            Instantiate(superPowerPrefab, position, Quaternion.identity, transform);
+        }
+        
+        private void SpawnPoison(Vector3 position)
+        {
+            Instantiate(poisonPrefab, position, Quaternion.identity, transform);
         }
     }
 }
